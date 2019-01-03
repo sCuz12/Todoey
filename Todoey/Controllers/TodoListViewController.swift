@@ -11,33 +11,23 @@ import UIKit
 class TodoListViewController: UITableViewController {
 
     var itemArray = [Item]()
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     
-    let defaults = UserDefaults.standard
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        let newItem = Item()
-        newItem.title = "Find Mike"
-        itemArray.append(newItem)
         
-        let newItem2 = Item()
-        newItem2.title = "Buy food"
-        itemArray.append(newItem2)
         
-        let newItem3 = Item()
-        newItem3.title = "Study"
-        itemArray.append(newItem3)
+        print (dataFilePath)
+        
        
         
         
         //set the item array the array of user defaults
-    
-     if let items = defaults.array(forKey: "TodoListArray") as? [Item]{
-         itemArray = items
-        }
         
+        loadItems()
     }
     
     //MARK - Tableview datasource methods
@@ -65,14 +55,15 @@ class TodoListViewController: UITableViewController {
         return itemArray.count
     }
     
+    
     //MARK - TableView Delagate method
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         //print(itemArray[indexPath.row])
     
     
 //checks if has already checkmark it removes it else it inserts a checkmark
-itemArray[indexPath.row].done = !itemArray[indexPath.row].done
-        
+        itemArray[indexPath.row].done = !itemArray[indexPath.row].done
+        saveItems()
 //          The bellow code is replaced by the above in a single line (refactoring)
 //        if itemArray[indexPath.row].done == false {
 //            itemArray[indexPath.row].done = true
@@ -101,10 +92,8 @@ itemArray[indexPath.row].done = !itemArray[indexPath.row].done
             let newItem = Item()
             newItem.title = textField.text!
             self.itemArray.append(newItem)
+            self.saveItems()
             
-            self.defaults.set(self.itemArray,forKey:"TodoListArray")
-            //reloas the page to show the data
-            self.tableView.reloadData()
             
         }
         
@@ -118,6 +107,29 @@ itemArray[indexPath.row].done = !itemArray[indexPath.row].done
     } // end of AddButtonPressed
     
     
+    func saveItems(){
+        let encoder = PropertyListEncoder()
+        
+        do {
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+        } catch {
+            print("Erro encoding item array,\(error)")
+        }
+        //reloas the page to show the data
+        self.tableView.reloadData()
+    }
+    
+    func loadItems() {
+        if let data = try? Data(contentsOf: dataFilePath!){
+            let decoder = PropertyListDecoder()
+            do {
+            itemArray = try decoder.decode([Item].self , from:data )
+            } catch {
+                print("Error decoding item array ,\(error)")
+            }
+        }
+    }
     
 }
 
